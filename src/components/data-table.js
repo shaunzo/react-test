@@ -1,8 +1,7 @@
+import React from 'react';
+
 class DataTable extends React.Component {
-    constructor(props) {
-        super(props);
-    }
- 
+
     render() {
         return (
             <div>
@@ -15,16 +14,24 @@ class DataTable extends React.Component {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            {this.props.cells.map((cell, i) => {
-                                return (<td key={i}>{cell}</td>)
-                             })}
-                        </tr>
+                        { this.props.cells.map((cell, i) => {
+                            return (
+                                <tr key={i}>
+                                    <td>{cell.name}</td>
+                                    <td>{cell.email}</td>
+                                    <td>{cell.age}</td>
+                                    <td>{cell.experience}</td>
+                                    <td>{cell.positionApplied}</td>
+                                    <td>{cell.dateOfApplication}</td>
+                                    <td>{cell.statusOfApplication}</td>
+                                </tr>
+                            )
+                            })}
                     </tbody>
                 </table>
             </div>
         )
     }
- }
- 
- export default DataTable;
+}
+
+export default DataTable;
