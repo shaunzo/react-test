@@ -1,17 +1,20 @@
 import React, { Component } from 'react';
 import './App.css';
 import DataTable from './components/data-table';
+import { BrowserRouter, Link } from 'react-router-dom';
 
-const tableHeaders = ['No', 'Name', 'Email', 'Age', 'Years of experience', 'Position applied', 'Date of application', 'Status of application'];
+const tableHeaders = ['Name', 'Email', 'Age', 'Years of experience', 'Position applied', 'Date of application', 'Status of application'];
 
 class App extends Component {
   constructor(props) {
    super(props);
    this.state = {
      candidates: [],
+     filteredCandidates: [],
      isLoaded: false,
      errorMessage: null,
-     sort: null
+     sort: null,
+     filter: null
    }
  }
 
@@ -21,49 +24,44 @@ class App extends Component {
   */
  sortData(string, data) {
    let result = null;
+   let sort = null;
 
    if(string === 'positionApplied') {
-     console.log('Sort data - Position Applied!');
-
-     result = this.state.candidates.sort((a,b) => (a.positionApplied > b.positionApplied) ? 1 : -1);
-     this.setState(prevState => ({
-       candidates: result,
-       sort: 'positionApplied'
-     }))
+     result = data.sort((a,b) => (a.positionApplied > b.positionApplied) ? 1 : -1);
+       sort='positionApplied';
 
    } else if(string === 'experience') {
-       result = this.state.candidates.sort((a,b) => (a.experience> b.experience) ? 1 : -1);
-       this.setState(prevState => ({
-         candidates: result,
-         sort: 'experience'
-       }));
+       result = data.sort((a,b) => (a.experience> b.experience) ? 1 : -1);
+       sort='experience';
 
    } else if(string === 'dateOfApplication') {
-     result = this.state.candidates.sort((a,b) => (a.dateOfApplication> b.dateOfApplication) ? 1 : -1);
+     result = data.sort((a,b) => (a.dateOfApplication> b.dateOfApplication) ? 1 : -1);
      result.reverse();
-     this.setState(prevState => ({
-       candidates: result,
-       sort: 'dateOfApplication'
-     }));
+     sort='dateOfApplication';
    }
+
+   this.setState(prevState => ({
+     filteredCandidates: result,
+     sort: sort
+   }))
  }
 
  /**
-  *
   * @param url string: API endpoint for ALL data
   */
  fetchCandidates(url) {
+     const queries = this.addQueryParamtoState();
      fetch(url)
      .then(res => res.json())
      .then(res => {
-
+       let candidates= null;
        // Check for error
        if(res.error) {
          throw res.error.message
        } else {
 
          // Map returned data
-         const candidates = res.data.map(x => ({
+           candidates = res.data.map(x => ({
            name: x.name,
            email: x.email,
            age: x.birth_date,
@@ -73,13 +71,26 @@ class App extends Component {
            statusOfApplication: x.status
          }));
 
+         const filteredCandidates = [...candidates];
+
          this.setState({
            isLoaded: true,
            candidates: candidates,
-           errorMessage: null
+           filteredCandidates: filteredCandidates,
+           errorMessage: null,
+           sort: queries.sort,
+           filter: queries.filter
          })
        }
-       // General error handling when fetching data
+     }).then(() => {
+       if(this.state.filter !== null) {
+         this.filterData(this.state.filter);
+       }
+
+       if(this.state.sort !== null) {
+         this.sortData(this.state.sort, this.state.filteredCandidates);
+       }
+
      }).catch((error) => {
        this.setState({
          candidates: [],
@@ -87,7 +98,41 @@ class App extends Component {
          errorMessage: error
        })
      })
+ };
 
+ filterData(value) {
+   let data = [...this.state.filteredCandidates];
+   this.filter = value;
+
+   if(value !== null || value !== '') {
+     data = [...this.state.candidates.filter((item) => {
+       const result = item.name.includes(value) | item.statusOfApplication.includes(value) | item.positionApplied.includes(value)
+       return result;
+     })]
+   } else if ((value === '')) {
+     data = [...this.state.candidates];
+   }
+  
+   if(this.state.sort) {
+     this.sortData(this.state.sort, data);
+   }
+
+   this.setState({
+     filteredCandidates: data,
+     filter: value
+   })
+
+   this.addQueryParamtoState();
+ }
+
+ resetFilters() {
+   document.getElementById('filterText').value = null;
+   let filteredCandidates = [...this.state.candidates];
+   this.setState({
+     filteredCandidates: filteredCandidates,
+     sort: null,
+     filter: null
+   });
  }
 
  componentDidMount() {
@@ -95,20 +140,72 @@ class App extends Component {
  }
 
  componentDidUpdate() {
-   console.log('Component Updated', this.state);
+   this.buildUrlQuery();
+ }
+
+ addQueryParamtoState() {
+   const queryParams = document.location.search.replace('?','').split('&');
+   const queriesArr = [];
+   const queryObj = {sort: null, filter: null};
+   queryParams.forEach(query => {
+     queriesArr.push(query.split('='));
+   });
+
+   for (let i = 0; i < queriesArr.length; i++) {
+     if(queriesArr[i][0] === "sort") {
+       queryObj.sort = queriesArr[i][1];
+     } else if(queriesArr[i][0] === "filter") {
+       queryObj.filter = queriesArr[i][1];
+     };
+   }
+   return queryObj;
+ }
+
+ buildUrlQuery(){
+   let queryString = '';
+   if(this.state.sort !== null || this.state.filter !== null) {
+     queryString += '?'
+   };
+   if(this.state.filter && !this.state.sort) {
+     queryString += `filter=${this.state.filter}`;
+   } else if(!this.state.filter && this.state.sort){
+     queryString += `sort=${this.state.sort}`;
+   } else if(this.state.filter && this.state.sort)  {
+     queryString += `sort=${this.state.sort}`;
+     queryString += `&filter=${this.state.filter}`;
+   };
+
+
+   window.history.pushState({
+     filter: this.state.filter,
+     sort: this.state.sort
+   }, '', window.origin + queryString);
  }
   render() {
    // If no errors received display the table
    if(this.state.isLoaded && this.state.errorMessage === null) {
      return (
        <div className="App">
-         <button onClick={() => this.sortData('positionApplied', this.state.candidates)}>Sort by Position Applied</button>
-         <button onClick={() => this.sortData('experience', this.state.candidates)}>Sort by Years of Experience</button>
-         <button onClick={() => this.sortData('dateOfApplication', this.state.candidates)}>Sort by Date of Application</button>
-         <DataTable headers={tableHeaders} cells={this.state.candidates} />
+         <BrowserRouter>
+           <Link to="/"><button onClick={() => this.resetFilters()}>Reset Filters</button></Link>
+         </BrowserRouter>
+         <BrowserRouter>
+           <Link to="/"><button onClick={() => this.sortData('positionApplied', this.state.filteredCandidates)}>Sort by Position Applied</button></Link>
+         </BrowserRouter>
+
+         <BrowserRouter>
+           <Link to="/"><button onClick={() => this.sortData('experience', this.state.filteredCandidates)}>Sort by Years of Experience</button></Link>
+         </BrowserRouter>
+        
+         <BrowserRouter>
+           <Link to="/"><button onClick={() => this.sortData('dateOfApplication', this.state.filteredCandidates)}>Sort by Date of Application</button></Link>
+         </BrowserRouter>
+
+         <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Filter by name, status or position applied"/>
+        
+         <DataTable headers={tableHeaders} cells={ this.state.filteredCandidates } />
        </div>
      );
-   // If error show error message
    } else if(this.state.isLoaded && this.state.errorMessage !== null) {
    return (
      <div className="Error">
