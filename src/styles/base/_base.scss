@@ -1,0 +1,70 @@
+@import '../theme/theme.scss';
+
+html {
+    background-color: $pale;
+    color: $dark;
+    font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 1em;
+}
+
+table {
+    margin: auto;
+    border-collapse: collapse;
+    border: 1px solid $dark;
+
+    thead {
+        background-color: $dark;
+        color: $dark-1;
+        border-color: $dark;
+
+        th {
+            padding: $space/2 $space;
+            text-align: left;
+        }
+    }
+
+    tbody {
+        background-color: $secondary-1;
+
+        tr {
+            background-color: $secondary-1;
+
+            &:nth-child(even) {
+                background-color: $secondary;
+            }
+            td {
+                padding: $space/2 $space;
+            }
+        }
+    }
+    
+}
+
+button {
+    background-color: $dark;
+    padding: $space/2 $space;
+    color: $dark-1;
+    font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 1em;
+    box-shadow: none;
+    color: $dark-1;
+    -webkit-font-smoothing: antialiased;
+    -webkit-appearance: none;
+    outline: none;
+    border: 1px solid $dark-1;
+
+    &:active {
+        background-color: $dark-1;
+        color: $dark;
+    }
+}
+
+input {
+    padding: $space/2 $space;
+    border: 1px solid $dark;
+    color: $dark;
+    font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 1em;
+    width: 100%;
+
+}

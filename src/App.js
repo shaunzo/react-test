@@ -1,7 +1,8 @@
 import React, { Component, useEffect } from 'react';
 import { connect } from "react-redux";
-import './App.css';
+import './App.scss';
 import DataTable from './components/data-table';
+import Loader from './components/loader';
 import { BrowserRouter, Link } from 'react-router-dom';
 
 const tableHeaders = ['Name', 'Email', 'Age', 'Years of experience', 'Position applied', 'Date of application', 'Status of application'];
@@ -157,7 +158,7 @@ class App extends Component {
            <Link to="/"><button onClick={() => this.sortData('dateOfApplication')}>Sort by Date of Application</button></Link>
          </BrowserRouter>
 
-         <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Filter by name, status or position applied"/>
+         <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Type to filter by name, status or position applied..."/>
         
          <DataTable headers={tableHeaders} cells={ this.props.filteredCandidates } />
        </div>
@@ -174,7 +175,7 @@ class App extends Component {
      );
    } else {
      // If non of the above show loader
-     return (<p>Loading data...</p>);
+     return (<Loader/>);
    }
  }
 }
