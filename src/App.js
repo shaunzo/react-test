@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
+import { connect } from "react-redux";
 import './App.css';
 import DataTable from './components/data-table';
 import { BrowserRouter, Link } from 'react-router-dom';
@@ -6,141 +7,75 @@ import { BrowserRouter, Link } from 'react-router-dom';
 const tableHeaders = ['Name', 'Email', 'Age', 'Years of experience', 'Position applied', 'Date of application', 'Status of application'];
 
 class App extends Component {
-  constructor(props) {
-   super(props);
-   this.state = {
-     candidates: [],
-     filteredCandidates: [],
-     isLoaded: false,
-     errorMessage: null,
-     sort: null,
-     filter: null
-   }
+
+ urlQueries = {
+   sort: null,
+   filter: null
  }
-
- /**
+  /**
   * @param  string :  positionApplied | experience | dateOfApplication
-  * @param data : array: the array of data to sort
   */
- sortData(string, data) {
-   let result = null;
-   let sort = null;
-
-   if(string === 'positionApplied') {
-     result = data.sort((a,b) => (a.positionApplied > b.positionApplied) ? 1 : -1);
-       sort='positionApplied';
-
-   } else if(string === 'experience') {
-       result = data.sort((a,b) => (a.experience> b.experience) ? 1 : -1);
-       sort='experience';
-
-   } else if(string === 'dateOfApplication') {
-     result = data.sort((a,b) => (a.dateOfApplication> b.dateOfApplication) ? 1 : -1);
-     result.reverse();
-     sort='dateOfApplication';
-   }
-
-   this.setState(prevState => ({
-     filteredCandidates: result,
-     sort: sort
-   }))
+ sortData(string) {
+   this.props.dispatch({type: 'SORT_CANDIDATES', payload: string});
+   this.urlQueries.sort = string;
  }
 
  /**
   * @param url string: API endpoint for ALL data
   */
- fetchCandidates(url) {
-     const queries = this.addQueryParamtoState();
+ fetchCandidates(url, sort, filter) {
+   if(!sort) {
+     sort = null;
+   }
+
+   if(!filter) {
+     filter = null;
+   }
+
+   this.addQueryParamtoState();
      fetch(url)
      .then(res => res.json())
      .then(res => {
-       let candidates= null;
        // Check for error
        if(res.error) {
          throw res.error.message
        } else {
-
-         // Map returned data
-           candidates = res.data.map(x => ({
-           name: x.name,
-           email: x.email,
-           age: x.birth_date,
-           experience: x.year_of_experience,
-           positionApplied: x.position_applied,
-           dateOfApplication: x.application_date,
-           statusOfApplication: x.status
-         }));
-
-         const filteredCandidates = [...candidates];
-
-         this.setState({
-           isLoaded: true,
-           candidates: candidates,
-           filteredCandidates: filteredCandidates,
-           errorMessage: null,
-           sort: queries.sort,
-           filter: queries.filter
-         })
+         this.props.dispatch({type: 'FETCHED_DATA', payload: res });
        }
-     }).then(() => {
-       if(this.state.filter !== null) {
-         this.filterData(this.state.filter);
-       }
-
-       if(this.state.sort !== null) {
-         this.sortData(this.state.sort, this.state.filteredCandidates);
-       }
-
      }).catch((error) => {
-       this.setState({
-         candidates: [],
-         isLoaded: true,
-         errorMessage: error
-       })
-     })
+       this.props.dispatch({type: 'ERROR_FETCHING_DATA', payload: error});
+     });
  };
 
  filterData(value) {
-   let data = [...this.state.filteredCandidates];
-   this.filter = value;
-
-   if(value !== null || value !== '') {
-     data = [...this.state.candidates.filter((item) => {
-       const result = item.name.includes(value) | item.statusOfApplication.includes(value) | item.positionApplied.includes(value)
-       return result;
-     })]
-   } else if ((value === '')) {
-     data = [...this.state.candidates];
+   if(value === "") {
+     value = null;
    }
   
-   if(this.state.sort) {
-     this.sortData(this.state.sort, data);
+   this.urlQueries.filter = value;
+   this.buildUrlQuery(this.urlQueries.filter, this.urlQueries.sort);
+   this.props.dispatch({type: 'FILTERED_CANDIDATES', payload: this.urlQueries.filter});
+
+   if(this.urlQueries.sort !== null || this.props.sort !== this.urlQueries.sort) {
+     this.props.dispatch({type: 'SORT_CANDIDATES', payload: this.urlQueries.sort});
    }
-
-   this.setState({
-     filteredCandidates: data,
-     filter: value
-   })
-
-   this.addQueryParamtoState();
  }
 
  resetFilters() {
+   this.urlQueries.sort = null;
+   this.urlQueries.filter = null;
    document.getElementById('filterText').value = null;
-   let filteredCandidates = [...this.state.candidates];
-   this.setState({
-     filteredCandidates: filteredCandidates,
-     sort: null,
-     filter: null
-   });
+   this.props.dispatch({type:'RESET_FILTERS'})
  }
 
- componentDidMount() {
+ componentDidMount(prevProps) {
+   this.addQueryParamtoState();
+   this.buildUrlQuery(this.urlQueries.filter, this.urlQueries.sort);
    this.fetchCandidates('http://personio-fe-test.herokuapp.com/api/v1/candidates');
  }
 
  componentDidUpdate() {
-   this.buildUrlQuery();
+   this.buildUrlQuery(this.urlQueries.filter, this.urlQueries.sort);
  }
 
  addQueryParamtoState() {
@@ -158,60 +93,73 @@ class App extends Component {
        queryObj.filter = queriesArr[i][1];
      };
    }
-   return queryObj;
+   this.urlQueries = {
+     sort: queryObj.sort,
+     filter: queryObj.filter
+   }
+   this.props.dispatch({type: "UDATE_URL_QUERY_STRINGS", payload: queryObj});
  }
 
- buildUrlQuery(){
+ buildUrlQuery(filter, sort){
+
    let queryString = '';
-   if(this.state.sort !== null || this.state.filter !== null) {
+
+   if(sort !== null || filter !== null) {
      queryString += '?'
    };
-   if(this.state.filter && !this.state.sort) {
-     queryString += `filter=${this.state.filter}`;
-   } else if(!this.state.filter && this.state.sort){
-     queryString += `sort=${this.state.sort}`;
-   } else if(this.state.filter && this.state.sort)  {
-     queryString += `sort=${this.state.sort}`;
-     queryString += `&filter=${this.state.filter}`;
+   if(filter && !sort) {
+     queryString += `filter=${filter}`;
+   } else if(!filter && sort){
+     queryString += `sort=${sort}`;
+   } else if(filter && sort)  {
+     queryString += `sort=${sort}`;
+     queryString += `&filter=${filter}`;
+   } else {
+     queryString = '';
    };
 
 
    window.history.pushState({
-     filter: this.state.filter,
-     sort: this.state.sort
+     filter: filter,
+     sort: sort
    }, '', window.origin + queryString);
  }
   render() {
    // If no errors received display the table
-   if(this.state.isLoaded && this.state.errorMessage === null) {
+   if(this.props.isLoaded && this.props.errorMessage === null) {
      return (
        <div className="App">
          <BrowserRouter>
            <Link to="/"><button onClick={() => this.resetFilters()}>Reset Filters</button></Link>
          </BrowserRouter>
          <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('positionApplied', this.state.filteredCandidates)}>Sort by Position Applied</button></Link>
+           <Link to="/"><button onClick={() => this.sortData('positionApplied')}>Sort by Position Applied</button></Link>
          </BrowserRouter>
 
          <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('experience', this.state.filteredCandidates)}>Sort by Years of Experience</button></Link>
+           <Link to="/"><button onClick={() => this.sortData('experience')}>Sort by Years of Experience</button></Link>
          </BrowserRouter>
         
          <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('dateOfApplication', this.state.filteredCandidates)}>Sort by Date of Application</button></Link>
+           <Link to="/"><button onClick={() => this.sortData('dateOfApplication')}>Sort by Date of Application</button></Link>
          </BrowserRouter>
 
          <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Filter by name, status or position applied"/>
         
-         <DataTable headers={tableHeaders} cells={ this.state.filteredCandidates } />
+         <DataTable headers={tableHeaders} cells={ this.props.filteredCandidates } />
        </div>
      );
-   } else if(this.state.isLoaded && this.state.errorMessage !== null) {
+   } else if(this.props.isLoaded && this.props.errorMessage !== null) {
    return (
      <div className="Error">
      <h1>Sorry an error occured while fetching candidates</h1>
      <hr/>
-     <p>Message from Server: {this.state.errorMessage}</p>
+     <p>Message from Server: {this.props.errorMessage}</p>
+
+     <BrowserRouter>
+       <Link to="/"><button>Try again</button></Link>
+     </BrowserRouter>
+    
      </div>
      );
    } else {
@@ -221,4 +169,13 @@ class App extends Component {
  }
 }
 
-export default App;
+const mapStateToProps = state => ({
+ candidates: state.candidates,
+ filteredCandidates: state.filteredCandidates,
+ isLoaded: state.isLoaded,
+ errorMessage: state.errorMessage,
+ sort: state.sort,
+ filter: state.filter
+});
+
+export default connect(mapStateToProps)(App);
