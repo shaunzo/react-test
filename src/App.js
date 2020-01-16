@@ -24,6 +24,7 @@ class App extends Component {
   * @param url string: API endpoint for ALL data
   */
  fetchCandidates(url, sort, filter) {
+  
    if(!sort) {
      sort = null;
    }
@@ -41,6 +42,14 @@ class App extends Component {
          throw res.error.message
        } else {
          this.props.dispatch({type: 'FETCHED_DATA', payload: res });
+
+         if(this.urlQueries.sort !== null) {
+           this.props.dispatch({type: 'SORT_CANDIDATES', payload: this.urlQueries.sort});
+         }
+
+         if(this.urlQueries.filter !== null) {
+           this.props.dispatch({type: 'FILTERED_CANDIDATES', payload: this.urlQueries.filter });
+         }
        }
      }).catch((error) => {
        this.props.dispatch({type: 'ERROR_FETCHING_DATA', payload: error});
@@ -68,7 +77,7 @@ class App extends Component {
    this.props.dispatch({type:'RESET_FILTERS'})
  }
 
- componentDidMount(prevProps) {
+ componentDidMount() {
    this.addQueryParamtoState();
    this.buildUrlQuery(this.urlQueries.filter, this.urlQueries.sort);
    this.fetchCandidates('http://personio-fe-test.herokuapp.com/api/v1/candidates');
@@ -124,6 +133,10 @@ class App extends Component {
      sort: sort
    }, '', window.origin + queryString);
  }
+
+ reload() {
+   window.location.href = window.location.origin;
+ }
   render() {
    // If no errors received display the table
    if(this.props.isLoaded && this.props.errorMessage === null) {
@@ -152,14 +165,11 @@ class App extends Component {
    } else if(this.props.isLoaded && this.props.errorMessage !== null) {
    return (
      <div className="Error">
-     <h1>Sorry an error occured while fetching candidates</h1>
-     <hr/>
-     <p>Message from Server: {this.props.errorMessage}</p>
+       <h1>Sorry an error occured while fetching candidates</h1>
+       <hr/>
+       <p>Message from Server: {this.props.errorMessage}</p>
 
-     <BrowserRouter>
-       <Link to="/"><button>Try again</button></Link>
-     </BrowserRouter>
-    
+       <button onClick={() => this.reload()}>Try again</button>
      </div>
      );
    } else {

@@ -46,7 +46,6 @@ function reducer(state=initialState, action) {
            }
 
        case "SORT_CANDIDATES":
-           console.log('SORT_CANDIDATES', state);
            let sort = action.payload;
            let result = null;
            let data = [...state.filteredCandidates];
@@ -73,7 +72,6 @@ function reducer(state=initialState, action) {
            }
 
        case "RESET_FILTERS":
-           console.log('RESET_FILTERS', state);
            return {
                ...state,
                filteredCandidates: state.candidates,
@@ -94,20 +92,14 @@ function reducer(state=initialState, action) {
            let filter = action.payload;
 
            if(filter !== null) {
-           console.log('FILTER IS NOT NULL', filter);
            let filteredResult = [...filteredData.filter((item) => {
                const result = item.name.includes(filter) | item.statusOfApplication.includes(filter) | item.positionApplied.includes(filter)
                return result;
            })]
            filteredData = filteredResult;
            } else if (filter === null) {
-           console.log('FILTER IS NULL!!!!!');
            filteredData = [...state.candidates];
            }
-          
-           // if(this.state.sort) {
-           // this.sortData(this.state.sort, data);
-           // }
 
            return {
                ...state,
