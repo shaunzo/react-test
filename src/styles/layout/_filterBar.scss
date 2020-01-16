@@ -1,0 +1,10 @@
+.filterBar {
+    width: 100%;
+    margin: $space auto;
+    display: flex;
+    flex-direction: row;
+
+    .filterBar-item {
+        flex-grow: 1;;
+    }
+}

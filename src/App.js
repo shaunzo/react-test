@@ -2,16 +2,18 @@ import React, { Component, useEffect } from 'react';
 import { connect } from "react-redux";
 import './App.scss';
 import DataTable from './components/data-table';
+import FilterBar from './components/filter';
 import Loader from './components/loader';
 import { BrowserRouter, Link } from 'react-router-dom';
+
 
 const tableHeaders = ['Name', 'Email', 'Age', 'Years of experience', 'Position applied', 'Date of application', 'Status of application'];
 
 class App extends Component {
 
  urlQueries = {
-   sort: null,
-   filter: null
+    sort: null,
+    filter: null
  }
   /**
   * @param  string :  positionApplied | experience | dateOfApplication
@@ -142,26 +144,41 @@ class App extends Component {
    // If no errors received display the table
    if(this.props.isLoaded && this.props.errorMessage === null) {
      return (
+
        <div className="App">
-         <BrowserRouter>
-           <Link to="/"><button onClick={() => this.resetFilters()}>Reset Filters</button></Link>
-         </BrowserRouter>
-         <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('positionApplied')}>Sort by Position Applied</button></Link>
-         </BrowserRouter>
+        <FilterBar>
+          <div className="filterBar-item">
+            <BrowserRouter>
+            <Link to="/"><button onClick={() => this.resetFilters()}>Reset Filters</button></Link>
+            </BrowserRouter>
+          </div>
 
-         <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('experience')}>Sort by Years of Experience</button></Link>
-         </BrowserRouter>
-        
-         <BrowserRouter>
-           <Link to="/"><button onClick={() => this.sortData('dateOfApplication')}>Sort by Date of Application</button></Link>
-         </BrowserRouter>
+          <div className="filterBar-item">
+            <BrowserRouter>
+            <Link to="/"><button onClick={() => this.sortData('positionApplied')}>Sort by Position Applied</button></Link>
+            </BrowserRouter>
+          </div>
 
-         <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Type to filter by name, status or position applied..."/>
-        
+          <div className="filterBar-item">
+            <BrowserRouter>
+            <Link to="/"><button onClick={() => this.sortData('experience')}>Sort by Years of Experience</button></Link>
+            </BrowserRouter>
+          </div>
+
+          <div className="filterBar-item">
+            <BrowserRouter>
+            <Link to="/"><button onClick={() => this.sortData('dateOfApplication')}>Sort by Date of Application</button></Link>
+            </BrowserRouter>
+          </div>
+
+          <div className="filterBar-item">
+            <input id='filterText' onInput={(e) => this.filterData(e.target.value) } type="text" placeholder="Type to filter by name, status or position applied..."/>
+          </div>
+        </FilterBar>
+
          <DataTable headers={tableHeaders} cells={ this.props.filteredCandidates } />
        </div>
+
      );
    } else if(this.props.isLoaded && this.props.errorMessage !== null) {
    return (
