@@ -4,6 +4,7 @@ import './App.scss';
 import DataTable from './components/data-table';
 import FilterBar from './components/filter';
 import Loader from './components/loader';
+import ErrorMessage from './components/error';
 import { BrowserRouter, Link } from 'react-router-dom';
 
 
@@ -137,9 +138,6 @@ class App extends Component {
    }, '', window.origin + queryString);
  }
 
- reload() {
-   window.location.href = window.location.origin;
- }
   render() {
    // If no errors received display the table
    if(this.props.isLoaded && this.props.errorMessage === null) {
@@ -182,13 +180,7 @@ class App extends Component {
      );
    } else if(this.props.isLoaded && this.props.errorMessage !== null) {
    return (
-     <div className="Error">
-       <h1>Sorry an error occured while fetching candidates</h1>
-       <hr/>
-       <p>Message from Server: {this.props.errorMessage}</p>
-
-       <button onClick={() => this.reload()}>Try again</button>
-     </div>
+      <ErrorMessage />
      );
    } else {
      // If non of the above show loader

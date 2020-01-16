@@ -1,0 +1,10 @@
+@import '../theme/theme';
+
+.error-message {
+    background-color: $secondary-1;
+    border: 1px solid $dark;
+    width: 500px;
+    margin: 300px auto;
+    padding: $space;
+
+}
